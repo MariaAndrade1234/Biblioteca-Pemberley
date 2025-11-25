@@ -6,30 +6,36 @@ from users.services import create_user as create_user_service
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-
         fields = (
-            'id', 
-            'username', 
-            'email', 
-            'full_name', 
-            'birthdate', 
-            'created_at', 
-            'updated_at'
+            'id',
+            'username',
+            'email',
+            'full_name',
+            'birthdate',
+            'created_at',
+            'updated_at',
+            'is_active',
+            'password',
         )
 
     read_only_fields = (
-        'id', 
+        'id',
         'created_at',
         'updated_at'
     )
 
-    extra_kwargs = {'password': {'write_only': True}}
+    extra_kwargs = {'password': {'write_only': True, 'required': False}}
 
     def create(self, validated_data):
-        """
-        Delega a criação ao `users.services.create_user` para separar
-        responsabilidades. O serviço delega ao manager do modelo, então
-        as regras de negócio permanecem inalteradas.
-        """
         return create_user_service(validated_data)
+
+    def update(self, instance, validated_data):
+        # handle password changes securely
+        password = validated_data.pop('password', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
         
