@@ -3,7 +3,7 @@ from django.db import models
 from core.models import TimestampedModel
 
 class User(AbstractUser, TimestampedModel):
-     full_name = models.CharField(max_length=255, verbose_name="Complete Name")
+     full_name = models.CharField(max_length=255, verbose_name="Full Name")
      email = models.EmailField(unique=True, verbose_name="Email Address")
      birthdate = models.DateField(null=True, blank=True, verbose_name="Birthdate")
 
