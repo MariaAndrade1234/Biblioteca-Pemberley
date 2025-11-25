@@ -55,6 +55,8 @@ class BorrowingViewSet(viewsets.ModelViewSet):
     queryset = Borrowing.objects.select_related('book', 'user').all()
     serializer_class = BorrowingSerializer
     permission_classes = [permissions.IsAuthenticated]
+    # dependency injection point: default service can be replaced in tests
+    borrowing_service = services.DefaultBorrowingService
 
     def get_queryset(self):
         # regular users see only their borrowings; staff can see all
@@ -64,8 +66,13 @@ class BorrowingViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(user=user)
 
     def perform_create(self, serializer):
-        # serializer.create delegates to services.borrow_book; ensure request context present
-        serializer.save()
+        # Use the borrowing service to enforce business rules and return the created borrowing
+        user = self.request.user
+        book = serializer.validated_data.get('book')
+        # allow client to request a 'days' parameter via request data
+        days = int(self.request.data.get('days', 14))
+        borrowing = self.borrowing_service.borrow(user, book, days=days)
+        serializer.instance = borrowing
 
     @action(detail=True, methods=['post'], url_path='return')
     def do_return(self, request, pk=None):
