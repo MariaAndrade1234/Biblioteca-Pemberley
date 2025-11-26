@@ -50,11 +50,11 @@ def test_full_user_fields():
     user = baker.make(
         User,
         full_name='Maria Andrade',
-        birth_date='1990-01-01'
+        birthdate='1990-01-01'
     )
     
     assert user.full_name == 'Maria Andrade'
-    assert str(user.birth_date) == '1990-01-01' # Verifica o formato da data
+    assert str(user.birthdate) == '1990-01-01' # Verifica o formato da data
     assert user.email is not None # Email é obrigatório no seu modelo
 
 def test_user_manager_methods():

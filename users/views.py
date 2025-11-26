@@ -30,7 +30,10 @@ class UserViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Override para permitir injeção do serviço de criação se fornecido."""
         service = self.user_service or __import__('users.services', fromlist=['create_user']).create_user
-        return service(serializer.validated_data)
+        instance = service(serializer.validated_data)
+        # Ensure serializer.instance is set so response data is correct
+        serializer.instance = instance
+        return instance
 
     def get_queryset(self):
         qs = super().get_queryset()
