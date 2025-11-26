@@ -8,7 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 class UserViewSet(viewsets.ModelViewSet):
     user_model = CustomUser
-    user_service = None  # pode ser injetado; por padrão usamos o service module
+    user_service = None  # may be injected; by default we use the service module
 
     queryset = CustomUser.objects.all().order_by('username')
     serializer_class = UserSerializer
@@ -18,16 +18,13 @@ class UserViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
 
     def get_permissions(self):
-        """
-        Garante que apenas usuários autenticados possam ver/editar, 
-        mas permite que qualquer um crie (POST).
-        """
+        """Ensure only authenticated users can view/edit, but allow anyone to create (POST)."""
         if self.action == 'create':
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
     def perform_create(self, serializer):
-        """Override para permitir injeção do serviço de criação se fornecido."""
+        """Override to allow injection of a creation service if provided."""
         service = self.user_service or __import__('users.services', fromlist=['create_user']).create_user
         instance = service(serializer.validated_data)
         serializer.instance = instance
