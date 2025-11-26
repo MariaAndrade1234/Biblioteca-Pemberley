@@ -126,6 +126,78 @@ Notes:
 
 ---
 
+## Example curl requests (common flows)
+
+Replace placeholders like <ACCESS_TOKEN>, <BOOK_UUID>, <BORROWING_ID> and <USER_ID> before running the commands.
+
+1) Obtain JWT tokens (login):
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/token/ \
+	-H "Content-Type: application/json" \
+	-d '{"username":"apiuser","password":"Password123"}'
+```
+
+2) Create an author (authenticated):
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/library/authors/ \
+	-H "Authorization: Bearer <ACCESS_TOKEN>" \
+	-H "Content-Type: application/json" \
+	-d '{"name":"Test Author","biography":"Bio","birth_date":"1980-01-01","nationality":"BR"}'
+```
+
+3) Create a book (authenticated):
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/library/books/ \
+	-H "Authorization: Bearer <ACCESS_TOKEN>" \
+	-H "Content-Type: application/json" \
+	-d '{"title":"Test Book","author_id":"<AUTHOR_UUID>","book_description":"Desc","category":"Fiction","publisher":"Pemberley Press","publication_date":"2020-01-01","ISBN":"ISBN-EXAMPLE-1234","page_count":123,"last_edition":"2023-01-01","language":"EN","cover_url":"http://example.com/cover.jpg"}'
+```
+
+4) Borrow a book (authenticated):
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/library/borrowings/ \
+	-H "Authorization: Bearer <ACCESS_TOKEN>" \
+	-H "Content-Type: application/json" \
+	-d '{"book":"<BOOK_UUID>", "days":7}'
+```
+
+5) Renew a borrowing (authenticated):
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/library/borrowings/<BORROWING_ID>/renew/ \
+	-H "Authorization: Bearer <ACCESS_TOKEN>" \
+	-H "Content-Type: application/json" \
+	-d '{"extra_days":7}'
+```
+
+6) Return a borrowed book (authenticated):
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/library/borrowings/<BORROWING_ID>/return/ \
+	-H "Authorization: Bearer <ACCESS_TOKEN>"
+```
+
+7) List overdue borrowings (authenticated):
+
+```bash
+curl -X GET "http://127.0.0.1:8000/api/v1/library/borrowings/overdue/?user_id=<USER_ID>" \
+	-H "Authorization: Bearer <ACCESS_TOKEN>"
+```
+
+8) List books currently borrowed by a user (anyone):
+
+```bash
+curl -X GET http://127.0.0.1:8000/api/v1/library/users/<USER_ID>/borrowed-books/ \
+	-H "Authorization: Bearer <ACCESS_TOKEN>"
+```
+
+These examples use the local development server at `http://127.0.0.1:8000/` and assume you already created a user and obtained a JWT access token. For PowerShell, you may need to adjust quoting or use the `--%` operator if curl is aliased.
+
+
 ## Development notes and architecture
 
 - Business logic is isolated in `library/services.py` (SRP): borrowing/return/renew/reserve operations live in the service layer and use transactions for consistency.
@@ -137,7 +209,7 @@ Notes:
 
 ## Submission / reviewers
 
-Branch for this feature: `bf-feature/library-models`.
+Branch: use the current feature branch (for example `bf-refactor/serializer-meta-and-tests`) or `main`.
 
 When creating a PR, please add the following reviewers: `Jarbas` and `Robson`.
 
@@ -148,10 +220,5 @@ When creating a PR, please add the following reviewers: `Jarbas` and `Robson`.
 See `LICENSE` in the repository root.
 
 ---
-
-If you want, I can also:
-- add example curl requests for the most common flows,
-- enrich the OpenAPI documentation with examples and descriptions for each endpoint,
-- or prepare a PR and add the reviewers.
 # Biblioteca-Pemberley
-Sistema de gerenciamento de livros
+A Django REST API for managing books, authors and borrowings.

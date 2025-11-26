@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
@@ -30,7 +31,7 @@ class AuthorViewSet(viewsets.ModelViewSet):
 
 
 class BookViewSet(viewsets.ModelViewSet):
-    queryset = Book.objects.select_related('author').all()
+    queryset = Book.objects.select_related('author').all().order_by('title')
     serializer_class = BookSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = StandardResultsSetPagination
@@ -71,7 +72,11 @@ class BorrowingViewSet(viewsets.ModelViewSet):
         book = serializer.validated_data.get('book')
         # allow client to request a 'days' parameter via request data
         days = int(self.request.data.get('days', 14))
-        borrowing = self.borrowing_service.borrow(user, book, days=days)
+        try:
+            borrowing = self.borrowing_service.borrow(user, book, days=days)
+        except Exception as exc:
+            # translate domain errors into DRF validation errors so clients get 400
+            raise DRFValidationError(str(exc))
         serializer.instance = borrowing
 
     @action(detail=True, methods=['post'], url_path='return')
@@ -120,6 +125,8 @@ class BorrowingViewSet(viewsets.ModelViewSet):
         elif status == 'inactive':
             users_qs = users_qs.filter(is_active=False)
 
+        # ensure deterministic ordering for pagination
+        users_qs = users_qs.order_by('username')
         # simple paginator
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(users_qs, request)
