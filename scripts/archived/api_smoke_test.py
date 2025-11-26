@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """Simple smoke test script that exercises key API endpoints using
 the Django test Client (no external HTTP required).
 
@@ -6,10 +5,12 @@ Run with the project's venv python:
 C:/Users/beatr/Biblioteca-Pemberley/venv/Scripts/python.exe scripts/api_smoke_test.py
 """
 import os
+import sys
 import json
 import pprint
 import uuid
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 import django
 django.setup()
@@ -18,7 +19,6 @@ from django.conf import settings
 from django.test import Client
 from django.contrib.auth import get_user_model
 
-# make testserver/hosts allowed for the test client
 for host in ('testserver', '127.0.0.1', 'localhost'):
     if host not in settings.ALLOWED_HOSTS:
         settings.ALLOWED_HOSTS.append(host)
@@ -28,9 +28,9 @@ client = Client()
 
 def ensure_user(username='apiuser', password='Password123', email='apiuser@example.com'):
     user, created = User.objects.get_or_create(username=username, defaults={'email': email})
-    if created:
-        user.set_password(password)
-        user.save()
+    user.set_password(password)
+    user.email = email
+    user.save()
     return user
 
 
@@ -54,7 +54,6 @@ def main():
     if access:
         headers['HTTP_AUTHORIZATION'] = f'Bearer {access}'
 
-    # create author
     author_payload = {
         'name': 'Test Author',
         'biography': 'Bio',
@@ -68,7 +67,6 @@ def main():
         results['create_author_response'] = {'text': resp.content.decode('utf-8')}
     results['create_author_status'] = resp.status_code
 
-    # create book (use author id if created)
     book_resp_json = None
     if resp.status_code in (200, 201):
         author_id = results['create_author_response'].get('id')
@@ -80,8 +78,6 @@ def main():
             'category': 'Fiction',
             'publisher': 'Pemberley Press',
             'publication_date': '2020-01-01',
-            # generate a short unique ISBN per run to avoid unique-constraint errors
-            # and respect model max length constraints
             'ISBN': f"ISBN-SMOKE-{uuid.uuid4().hex[:12]}",
             'page_count': 123,
             'last_edition': '2023-01-01',
@@ -96,7 +92,6 @@ def main():
         results['create_book_status'] = resp_b.status_code
         results['create_book_response'] = book_resp_json
 
-    # borrow the book
     if book_resp_json and isinstance(book_resp_json, dict) and book_resp_json.get('id'):
         borrow_payload = {'book': book_resp_json['id'], 'days': 7}
         resp_borrow = client.post('/api/v1/library/borrowings/', json.dumps(borrow_payload), content_type='application/json', **headers)
@@ -106,7 +101,6 @@ def main():
             results['borrow_response'] = {'text': resp_borrow.content.decode('utf-8')}
         results['borrow_status'] = resp_borrow.status_code
 
-    # list borrowings for the authenticated user
     resp_list = client.get('/api/v1/library/borrowings/', **headers)
     try:
         results['list_borrowings_response'] = json.loads(resp_list.content)

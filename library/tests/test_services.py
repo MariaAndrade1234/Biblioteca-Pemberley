@@ -36,7 +36,6 @@ def test_borrow_book_not_available_raises():
 def test_max_active_borrowings_exceeded():
     user = User.objects.create_user(username='u3', email='u3@example.com', password='pw')
     author = Author.objects.create(name='A')
-    # create 5 active borrowings
     for i in range(5):
         b = Book.objects.create(title=f'Book{i}', author=author, ISBN=f'ISBN-max-{i}')
         services.DefaultBorrowingService.borrow(user, b)
@@ -54,7 +53,6 @@ def test_renew_blocked_by_reservation():
     book = Book.objects.create(title='BR', author=author, ISBN='ISBN-R')
 
     borrowing = services.DefaultBorrowingService.borrow(user1, book, days=7)
-    # user2 reserves the book
     Reservation.objects.create(user=user2, book=book)
 
     with pytest.raises(services.BorrowingError):
@@ -69,11 +67,9 @@ def test_return_assigns_to_next_reservation():
     book = Book.objects.create(title='BR2', author=author, ISBN='ISBN-R2')
 
     borrowing = services.DefaultBorrowingService.borrow(user1, book, days=7)
-    # user2 reserves
     Reservation.objects.create(user=user2, book=book)
 
     new_borrowing = services.DefaultBorrowingService.return_borrowing(borrowing)
 
-    # new_borrowing should be for user2 and book should remain borrowed
     assert new_borrowing.user == user2
     assert book.status == Book.STATUS_BORROWED

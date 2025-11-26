@@ -41,7 +41,6 @@ class BookViewSet(viewsets.ModelViewSet):
     ordering_fields = ['title', 'publication_date', 'author__name']
 
     def update(self, request, *args, **kwargs):
-        # enforce staff-only status changes at view level for extra safety
         if 'status' in request.data and not request.user.is_staff:
             return Response({'detail': 'Only staff users can change book status'}, status=400)
         return super().update(request, *args, **kwargs)
@@ -56,26 +55,21 @@ class BorrowingViewSet(viewsets.ModelViewSet):
     queryset = Borrowing.objects.select_related('book', 'user').all()
     serializer_class = BorrowingSerializer
     permission_classes = [permissions.IsAuthenticated]
-    # dependency injection point: default service can be replaced in tests
     borrowing_service = services.DefaultBorrowingService
 
     def get_queryset(self):
-        # regular users see only their borrowings; staff can see all
         user = self.request.user
         if user.is_staff:
             return self.queryset
         return self.queryset.filter(user=user)
 
     def perform_create(self, serializer):
-        # Use the borrowing service to enforce business rules and return the created borrowing
         user = self.request.user
         book = serializer.validated_data.get('book')
-        # allow client to request a 'days' parameter via request data
         days = int(self.request.data.get('days', 14))
         try:
             borrowing = self.borrowing_service.borrow(user, book, days=days)
         except Exception as exc:
-            # translate domain errors into DRF validation errors so clients get 400
             raise DRFValidationError(str(exc))
         serializer.instance = borrowing
 
@@ -102,7 +96,6 @@ class BorrowingViewSet(viewsets.ModelViewSet):
     def overdue(self, request):
         now = timezone.now()
         qs = self.queryset.filter(return_date__lt=now, returned=False)
-        # optional filter by user id
         user_id = request.query_params.get('user_id')
         if user_id:
             qs = qs.filter(user_id=user_id)
@@ -117,7 +110,6 @@ class BorrowingViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='borrowers')
     def borrowers(self, request):
-        # list users who have at least one active borrowing
         users_qs = User.objects.filter(borrowings__returned=False).distinct()
         status = request.query_params.get('status')
         if status == 'active':
@@ -125,9 +117,7 @@ class BorrowingViewSet(viewsets.ModelViewSet):
         elif status == 'inactive':
             users_qs = users_qs.filter(is_active=False)
 
-        # ensure deterministic ordering for pagination
         users_qs = users_qs.order_by('username')
-        # simple paginator
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(users_qs, request)
         data = [{'id': u.id, 'username': u.username, 'email': u.email, 'is_active': u.is_active} for u in page]

@@ -30,7 +30,6 @@ class UserSerializer(serializers.ModelSerializer):
         return create_user_service(validated_data)
 
     def update(self, instance, validated_data):
-        # handle password changes securely
         password = validated_data.pop('password', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
