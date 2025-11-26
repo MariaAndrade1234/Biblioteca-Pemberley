@@ -11,7 +11,7 @@ class UserViewSet(viewsets.ModelViewSet):
     user_model = CustomUser
     user_service = None  # pode ser injetado; por padrão usamos o service module
 
-    queryset = CustomUser.objects.all()
+    queryset = CustomUser.objects.all().order_by('username')
     serializer_class = UserSerializer
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter, drf_filters.OrderingFilter]
     search_fields = ['username', 'email', 'full_name']
@@ -36,7 +36,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return instance
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().order_by('username')
         status = self.request.query_params.get('status')
         if status == 'active':
             qs = qs.filter(is_active=True)
