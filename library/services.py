@@ -44,12 +44,15 @@ class BorrowingService:
         return_date = timezone.now() + timedelta(days=int(days))
 
         with transaction.atomic():
-            book.status = Book.STATUS_BORROWED
-            book.save(update_fields=['status'])
+            locked_book = Book.objects.select_for_update().get(pk=book.pk)
+            if locked_book.status != Book.STATUS_AVAILABLE:
+                raise BookNotAvailable('Book is not available for borrowing')
+            locked_book.status = Book.STATUS_BORROWED
+            locked_book.save(update_fields=['status'])
 
             borrowing = Borrowing.objects.create(
                 user=user,
-                book=book,
+                book=locked_book,
                 borrow_date=timezone.now(),
                 return_date=return_date,
             )
@@ -64,7 +67,7 @@ class BorrowingService:
             borrowing.returned = True
             borrowing.save(update_fields=['returned'])
 
-            book = borrowing.book
+            book = Book.objects.select_for_update().get(pk=borrowing.book.pk)
             next_reservation = (
                 Reservation.objects.filter(book=book, active=True)
                 .order_by('created_at')
@@ -120,11 +123,9 @@ class BorrowingService:
         return borrowing
 
 
-# Default service instance for backward compatibility
 DefaultBorrowingService = BorrowingService()
 
 
-# Backwards-compatible module-level functions
 def borrow_book(user, book, days: int = 14):
     return DefaultBorrowingService.borrow(user, book, days=days)
 

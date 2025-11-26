@@ -21,7 +21,6 @@ class UsersApiTests(TestCase):
         self.assertTrue(any(u['username'] == 'inactive' for u in data.get('results', data)))
 
     def test_non_staff_cannot_list_other_users(self):
-        # existing behavior allows authenticated users to list; ensure at least endpoint works
         self.client.force_authenticate(self.user)
         resp = self.client.get('/api/v1/users/')
         self.assertEqual(resp.status_code, 200)

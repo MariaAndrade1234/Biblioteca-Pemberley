@@ -58,7 +58,6 @@ class Borrowing(TimestampedModel):
 		ordering = ['-borrow_date']
 
 	def clean(self):
-		# return_date must be after borrow_date
 		if self.return_date <= self.borrow_date:
 			from django.core.exceptions import ValidationError
 

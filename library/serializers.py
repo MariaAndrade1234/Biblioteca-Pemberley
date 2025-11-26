@@ -45,7 +45,6 @@ class BookSerializer(serializers.ModelSerializer):
         ]
 
     def update(self, instance, validated_data):
-        # prevent non-staff users from changing the status field
         request = self.context.get('request')
         if request is not None and not request.user.is_staff:
             if 'status' in validated_data and validated_data['status'] != instance.status:
@@ -69,7 +68,6 @@ class BorrowingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Authentication required to borrow a book')
 
         book = validated_data['book']
-        # allow client to pass a 'days' integer in request data to control the period
         days = request.data.get('days', 14)
 
         try:

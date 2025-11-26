@@ -7,7 +7,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    # Dependências substituíveis para facilitar testes e extensões futuras
     user_model = CustomUser
     user_service = None  # pode ser injetado; por padrão usamos o service module
 
@@ -31,7 +30,6 @@ class UserViewSet(viewsets.ModelViewSet):
         """Override para permitir injeção do serviço de criação se fornecido."""
         service = self.user_service or __import__('users.services', fromlist=['create_user']).create_user
         instance = service(serializer.validated_data)
-        # Ensure serializer.instance is set so response data is correct
         serializer.instance = instance
         return instance
 

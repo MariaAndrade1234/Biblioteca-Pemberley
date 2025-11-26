@@ -1,6 +1,5 @@
 from django.contrib import admin
 
-# Register your models here.
 
 from . import apps
 from .models import Author, Book, Borrowing
@@ -25,4 +24,3 @@ class BorrowingAdmin(admin.ModelAdmin):
 class ReservationAdmin(admin.ModelAdmin):
 	list_display = ('user', 'book', 'created_at', 'active')
 
-# Register your models here.

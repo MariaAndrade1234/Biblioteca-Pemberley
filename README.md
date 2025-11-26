@@ -1,4 +1,3 @@
-# Pemberley Library
 
 Pemberley Library is a Django-based REST API for managing books, authors and borrowings.
 
@@ -6,7 +5,6 @@ This repository contains a small library management backend built with Django an
 
 ---
 
-## Quick Start (Windows / PowerShell)
 
 Prerequisites:
 - Python 3.11+ (the project was developed and tested with Python 3.13)
@@ -46,12 +44,10 @@ python manage.py createsuperuser
 
 ```powershell
 python manage.py runserver
-# Open http://127.0.0.1:8000/api/docs/ for API docs (Swagger)
 ```
 
 ---
 
-## Tests
 
 Run the Django test suite (unit + API tests):
 
@@ -67,7 +63,6 @@ python -m pytest
 
 ---
 
-## Authentication (JWT)
 
 The API uses JWT authentication. Obtain a token pair with:
 
@@ -96,7 +91,6 @@ POST /api/v1/token/refresh/
 
 ---
 
-## Main API Endpoints (summary)
 
 - Users
 	- `GET /api/v1/users/` — list users (supports `?status=active|inactive`, pagination)
@@ -126,7 +120,6 @@ Notes:
 
 ---
 
-## Example curl requests (common flows)
 
 Replace placeholders like <ACCESS_TOKEN>, <BOOK_UUID>, <BORROWING_ID> and <USER_ID> before running the commands.
 
@@ -198,7 +191,6 @@ curl -X GET http://127.0.0.1:8000/api/v1/library/users/<USER_ID>/borrowed-books/
 These examples use the local development server at `http://127.0.0.1:8000/` and assume you already created a user and obtained a JWT access token. For PowerShell, you may need to adjust quoting or use the `--%` operator if curl is aliased.
 
 
-## Development notes and architecture
 
 - Business logic is isolated in `library/services.py` (SRP): borrowing/return/renew/reserve operations live in the service layer and use transactions for consistency.
 - Serializers and ViewSets implement the API surface; `BookSerializer` and `BookViewSet` include protections so only staff can mutate `status`.
@@ -207,7 +199,6 @@ These examples use the local development server at `http://127.0.0.1:8000/` and 
 
 ---
 
-## Submission / reviewers
 
 Branch: use the current feature branch (for example `bf-refactor/serializer-meta-and-tests`) or `main`.
 
@@ -215,10 +206,8 @@ When creating a PR, please add the following reviewers: `Jarbas` and `Robson`.
 
 ---
 
-## License
 
 See `LICENSE` in the repository root.
 
 ---
-# Biblioteca-Pemberley
 A Django REST API for managing books, authors and borrowings.
