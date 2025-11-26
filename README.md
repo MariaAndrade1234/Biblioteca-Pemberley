@@ -99,6 +99,82 @@ POST /api/v1/token/refresh/
 	- `POST /api/v1/token/refresh/` — refresh JWT
 
 - Library
+
+	Running tests (Windows PowerShell)
+	---------------------------------
+
+	Follow these steps to run the automated test suite locally (Windows PowerShell examples):
+
+	1. Activate the virtual environment (from the project root):
+
+	```powershell
+	python -m venv .venv
+	.\.venv\Scripts\Activate.ps1
+	```
+
+	2. Install dependencies (if not already installed):
+
+	```powershell
+	pip install --upgrade pip
+	pip install -r requirements.txt
+	```
+
+	3. Run tests using Django's test runner:
+
+	- Run the whole Django test suite (verbosity for more details):
+
+	```powershell
+	.venv\Scripts\python.exe manage.py test -v2
+	```
+
+	- Run tests for specific apps (faster when iterating):
+
+	```powershell
+	.venv\Scripts\python.exe manage.py test library users -v2
+	```
+
+	- Run a single test (example):
+
+	```powershell
+	.venv\Scripts\python.exe manage.py test users.tests.test_jwt.JWTFlowTests.test_access_token_expires -v2
+	```
+
+	- Run quietly (less output):
+
+	```powershell
+	.venv\Scripts\python.exe manage.py test -q
+	```
+
+	- Save test output to a file (useful if your terminal session is interrupted):
+
+	```powershell
+	.venv\Scripts\python.exe manage.py test -v2 > test-output.txt 2>&1
+	```
+
+	4. Optionally run tests with `pytest` (if installed):
+
+	```powershell
+	python -m pytest -q
+	```
+
+	5. Run coverage (if you want coverage reports):
+
+	```powershell
+	pip install coverage
+	coverage run -m pytest
+	coverage report -m
+	```
+
+	Notes and tips
+	- The Django test runner creates and destroys a temporary test database automatically; you do not need to run migrations before tests.
+	- If a specific test is flaky because of time-based behavior (e.g., token expiry), prefer running just that single test while iterating.
+	- Archived smoke scripts are available in `scripts/archived/` and can be run directly with the project virtualenv Python, for example:
+
+	```powershell
+	.venv\Scripts\python.exe scripts\archived\api_smoke_full.py
+	```
+
+	If you want, I can also add a short `Makefile` or PowerShell script to simplify these commands.
 	- `GET/POST /api/v1/library/authors/`
 	- `GET/POST /api/v1/library/books/` — supports filters: `?category=...&author=...&status=...`, search (`?search=...`) and ordering (`?ordering=title`)
 	- `GET/POST /api/v1/library/borrowings/` — create borrowing (authenticated); POST body uses `book` (UUID) and optional `days` integer
@@ -109,105 +185,3 @@ POST /api/v1/token/refresh/
 	- `GET /api/v1/library/reservations/` — create/list reservations
 	- `GET /api/v1/library/users/<user_id>/borrowed-books/` — list books currently borrowed by a user
 
-Notes:
-- Only staff users can change the `status` of a `Book`. Non-staff attempts will return an error.
-- Business rules enforced:
-	- Users can borrow books only if book status is `available`.
-	- A user cannot have more than 5 active borrowings.
-	- Inactive users cannot borrow books.
-	- `return_date` must be after `borrow_date`.
-	- Renewals are blocked when another user has an active reservation for the book.
-
----
-
-
-Replace placeholders like <ACCESS_TOKEN>, <BOOK_UUID>, <BORROWING_ID> and <USER_ID> before running the commands.
-
-1) Obtain JWT tokens (login):
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/token/ \
-	-H "Content-Type: application/json" \
-	-d '{"username":"apiuser","password":"Password123"}'
-```
-
-2) Create an author (authenticated):
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/library/authors/ \
-	-H "Authorization: Bearer <ACCESS_TOKEN>" \
-	-H "Content-Type: application/json" \
-	-d '{"name":"Test Author","biography":"Bio","birth_date":"1980-01-01","nationality":"BR"}'
-```
-
-3) Create a book (authenticated):
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/library/books/ \
-	-H "Authorization: Bearer <ACCESS_TOKEN>" \
-	-H "Content-Type: application/json" \
-	-d '{"title":"Test Book","author_id":"<AUTHOR_UUID>","book_description":"Desc","category":"Fiction","publisher":"Pemberley Press","publication_date":"2020-01-01","ISBN":"ISBN-EXAMPLE-1234","page_count":123,"last_edition":"2023-01-01","language":"EN","cover_url":"http://example.com/cover.jpg"}'
-```
-
-4) Borrow a book (authenticated):
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/library/borrowings/ \
-	-H "Authorization: Bearer <ACCESS_TOKEN>" \
-	-H "Content-Type: application/json" \
-	-d '{"book":"<BOOK_UUID>", "days":7}'
-```
-
-5) Renew a borrowing (authenticated):
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/library/borrowings/<BORROWING_ID>/renew/ \
-	-H "Authorization: Bearer <ACCESS_TOKEN>" \
-	-H "Content-Type: application/json" \
-	-d '{"extra_days":7}'
-```
-
-6) Return a borrowed book (authenticated):
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/library/borrowings/<BORROWING_ID>/return/ \
-	-H "Authorization: Bearer <ACCESS_TOKEN>"
-```
-
-7) List overdue borrowings (authenticated):
-
-```bash
-curl -X GET "http://127.0.0.1:8000/api/v1/library/borrowings/overdue/?user_id=<USER_ID>" \
-	-H "Authorization: Bearer <ACCESS_TOKEN>"
-```
-
-8) List books currently borrowed by a user (anyone):
-
-```bash
-curl -X GET http://127.0.0.1:8000/api/v1/library/users/<USER_ID>/borrowed-books/ \
-	-H "Authorization: Bearer <ACCESS_TOKEN>"
-```
-
-These examples use the local development server at `http://127.0.0.1:8000/` and assume you already created a user and obtained a JWT access token. For PowerShell, you may need to adjust quoting or use the `--%` operator if curl is aliased.
-
-
-
-- Business logic is isolated in `library/services.py` (SRP): borrowing/return/renew/reserve operations live in the service layer and use transactions for consistency.
-- Serializers and ViewSets implement the API surface; `BookSerializer` and `BookViewSet` include protections so only staff can mutate `status`.
-- Models are defined in `library/models.py` with UUID primary keys where requested.
-- OpenAPI docs are available at `/api/schema/` and Swagger UI at `/api/docs/` (powered by drf-spectacular).
-
----
-
-
-Branch: use the current feature branch (for example `bf-refactor/serializer-meta-and-tests`) or `main`.
-
-When creating a PR, please add the following reviewers: `Jarbas` and `Robson`.
-
----
-
-
-See `LICENSE` in the repository root.
-
----
-A Django REST API for managing books, authors and borrowings.
