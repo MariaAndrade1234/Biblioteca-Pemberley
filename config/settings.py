@@ -120,7 +120,8 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,  # Requisito: "Implementar paginação"
+    'PAGE_SIZE': 10,  
+    'EXCEPTION_HANDLER': 'config.exception_handlers.custom_exception_handler',
 }
 
 SPECTACULAR_SETTINGS = {
@@ -129,3 +130,16 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
 }
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}

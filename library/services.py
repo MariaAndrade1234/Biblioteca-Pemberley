@@ -7,7 +7,6 @@ from .models import Book, Borrowing, Reservation
 
 
 class BorrowingError(Exception):
-    """Base exception for borrowing domain errors."""
     pass
 
 

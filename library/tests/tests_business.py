@@ -31,7 +31,6 @@ class BusinessRulesTests(TestCase):
         for i, b in enumerate(books):
             resp = self.client.post('/api/v1/library/borrowings/', {'book': str(b.id), 'days': 7}, format='json')
             statuses.append(resp.status_code)
-        # first five should be 201, sixth should be 400
         self.assertEqual(statuses[:5], [201]*5)
         self.assertEqual(statuses[5], 400)
 
@@ -52,43 +51,35 @@ class BusinessRulesTests(TestCase):
         self.assertEqual(b.status, Book.STATUS_BORROWED)
 
         borrow_id = resp.json().get('id')
-        # return
         resp2 = self.client.post(f'/api/v1/library/borrowings/{borrow_id}/return/')
         self.assertEqual(resp2.status_code, 200)
         b.refresh_from_db()
         self.assertEqual(b.status, Book.STATUS_AVAILABLE)
 
     def test_renew_blocked_by_reservation(self):
-        # user borrows
         self.client.force_authenticate(user=self.user)
         b = self._create_book('renew')
         resp = self.client.post('/api/v1/library/borrowings/', {'book': str(b.id), 'days': 7}, format='json')
         self.assertEqual(resp.status_code, 201)
         borrow_id = resp.json().get('id')
 
-        # other reserves
         Reservation.objects.create(user=self.other, book=b)
 
-        # attempt renew -> should be 400
         resp2 = self.client.post(f'/api/v1/library/borrowings/{borrow_id}/renew/', {'extra_days': 7}, format='json')
         self.assertEqual(resp2.status_code, 400)
 
     def test_return_assigns_to_reserver(self):
-        # user borrows
         self.client.force_authenticate(user=self.user)
         b = self._create_book('assign')
         resp = self.client.post('/api/v1/library/borrowings/', {'book': str(b.id), 'days': 7}, format='json')
         self.assertEqual(resp.status_code, 201)
         borrow_id = resp.json().get('id')
 
-        # other reserves
         Reservation.objects.create(user=self.other, book=b)
 
-        # return -> should create new borrowing for reserver
         resp2 = self.client.post(f'/api/v1/library/borrowings/{borrow_id}/return/')
         self.assertEqual(resp2.status_code, 200)
 
-        # reserver should have an active borrowing for that book
         self.client.force_authenticate(user=self.other)
         resp3 = self.client.get('/api/v1/library/borrowings/')
         data = resp3.json()
