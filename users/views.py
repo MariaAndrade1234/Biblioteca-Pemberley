@@ -1,14 +1,20 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from users.models import User as CustomUser
 from users.serializers import UserSerializer
 from rest_framework import filters as drf_filters
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
+import logging
 
 
-class UserViewSet(viewsets.ModelViewSet):
+logger = logging.getLogger(__name__)
+from core.views import BaseViewSet
+
+
+class UserViewSet(BaseViewSet):
     user_model = CustomUser
-    user_service = None  # may be injected; by default we use the service module
+    user_service = None  
 
     queryset = CustomUser.objects.all().order_by('username')
     serializer_class = UserSerializer
@@ -18,16 +24,21 @@ class UserViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
 
     def get_permissions(self):
-        """Ensure only authenticated users can view/edit, but allow anyone to create (POST)."""
         if self.action == 'create':
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
     def perform_create(self, serializer):
-        """Override to allow injection of a creation service if provided."""
-        service = self.user_service or __import__('users.services', fromlist=['create_user']).create_user
-        instance = service(serializer.validated_data)
+        try:
+            logger.debug('Creating user with data: %s', {k: v for k, v in serializer.validated_data.items() if k != 'password'})
+            service = self.user_service or __import__('users.services', fromlist=['create_user']).create_user
+            instance = service(serializer.validated_data)
+        except Exception as exc:
+            logger.exception('Error creating user')
+            raise DRFValidationError(str(exc))
+
         serializer.instance = instance
+        logger.info('User created: id=%s username=%s', getattr(instance, 'id', None), getattr(instance, 'username', None))
         return instance
 
     def get_queryset(self):
@@ -37,6 +48,7 @@ class UserViewSet(viewsets.ModelViewSet):
             qs = qs.filter(is_active=True)
         elif status == 'inactive':
             qs = qs.filter(is_active=False)
+        logger.debug('User list requested by %s filter_status=%s result_count=%s', getattr(self.request.user, 'username', None), status, qs.count())
         return qs
 
 

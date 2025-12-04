@@ -4,7 +4,7 @@ to be a file on disk so it can be inspected after test runs.
 
 Usage: manage.py test --settings=config.settings_test --keepdb
 """
-from .settings import *  # noqa: F401,F403
+from .settings import * 
 
 from pathlib import Path
 

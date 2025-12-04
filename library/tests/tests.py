@@ -110,7 +110,7 @@ class LibraryFlowTests(TestCase):
 		b = Book.objects.create(title='PermTest', subtitle='', author=self.author, ISBN='ISBNP')
 		self.client.force_authenticate(self.user2)
 		resp = self.client.patch(f'/api/v1/library/books/{b.id}/', {'status': 'borrowed'}, format='json')
-		self.assertEqual(resp.status_code, 400)
+		self.assertEqual(resp.status_code, 403)
 
 		self.client.force_authenticate(self.staff)
 		resp = self.client.patch(f'/api/v1/library/books/{b.id}/', {'status': 'borrowed'}, format='json')

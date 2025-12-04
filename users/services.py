@@ -3,11 +3,6 @@ from users.models import User as CustomUser
 
 
 def create_user(validated_data: Dict) -> CustomUser:
-    """Cria um usuário delegando ao manager do modelo.
-
-    Observação: não altera regras de negócio — apenas encapsula a chamada
-    para facilitar injeção/teses e separar responsabilidades.
-    """
     return CustomUser.objects.create_user(
         username=validated_data.get('username'),
         password=validated_data.get('password'),
